@@ -3,9 +3,9 @@ name: publish-site-artifact
 description: Publish a static site artifact — a self-contained report or guide page — to the static-site dumpyard. Use when asked to publish, upload, or add a static page artifact.
 ---
 
-# Publish to sites.arnavg.in
+# Publish to sites.maniarnamra.com
 
-Static-site dumpyard by Arnav Gupta. Repo `championswimmer/sites.arnavg.in`, branch `main`, served from root at https://sites.arnavg.in.
+Static-site dumpyard by Namra Maniar. Repo `namra4122/sites.maniarnamra.com`, branch `main`, served from root at https://sites.maniarnamra.com.
 
 ## Add a page
 
@@ -13,7 +13,7 @@ Static-site dumpyard by Arnav Gupta. Repo `championswimmer/sites.arnavg.in`, bra
 2. Write self-contained `index.html` (inline CSS/JS, no build, no frameworks; keep any assets inside your folder) to:
    - report → `research/<slug>/index.html` (serves at `/research/<slug>/`)
    - guide → `learning/<slug>/index.html` (serves at `/learning/<slug>/`)
-3. Never touch `CNAME`, `.nojekyll`, `robots.txt`, `llms.txt`, `add-skill.sh`, `skills/`, `research/index.html`, `learning/index.html` (listings regenerate automatically via a GitHub Action). Never commit tokens/secrets.
+3. Never touch `robots.txt`, `llms.txt`, `add-skill.sh`, `skills/`, `research/index.html`, `learning/index.html` (listings regenerate automatically via a GitHub Action). Never commit tokens/secrets.
 
 ## Upload (pick the first that applies; never hardcode or commit tokens)
 
@@ -21,7 +21,7 @@ Static-site dumpyard by Arnav Gupta. Repo `championswimmer/sites.arnavg.in`, bra
 
 ```sh
 CONTENT=$(base64 < /local/path/to/index.html | tr -d '\n')
-gh api "repos/championswimmer/sites.arnavg.in/contents/research/<slug>/index.html" \
+gh api "repos/namra4122/sites.maniarnamra.com/contents/research/<slug>/index.html" \
   -X PUT -f message="add <slug>" -f branch="main" -f content="$CONTENT"
 # updating an existing file: GET the path first for its "sha", then add -f sha="<sha>".
 ```
@@ -29,8 +29,8 @@ Ref: https://cli.github.com/manual/
 
 ### 2. GitHub MCP server (installed + authenticated)
 
-Call `create_or_update_file` once per file with owner `championswimmer`,
-repo `sites.arnavg.in`, branch `main`, path `research/<slug>/index.html`
+Call `create_or_update_file` once per file with owner `namra4122`,
+repo `sites.maniarnamra.com`, branch `main`, path `research/<slug>/index.html`
 (or `learning/...`), your HTML as `content` (raw text, not base64),
 message `add <slug>`. Omit `sha` for new files; for updates fetch it
 first via `get_file_contents` (same owner/repo/path, ref `main`).
@@ -42,7 +42,7 @@ Ref: https://github.com/github/github-mcp-server
 CONTENT=$(base64 < /local/path/to/index.html | tr -d '\n')
 curl -X PUT -H "Authorization: Bearer $GITHUB_TOKEN" \
   -H "Accept: application/vnd.github+json" \
-  https://api.github.com/repos/championswimmer/sites.arnavg.in/contents/research/<slug>/index.html \
+  https://api.github.com/repos/namra4122/sites.maniarnamra.com/contents/research/<slug>/index.html \
   -d "{\"message\":\"add <slug>\",\"content\":\"$CONTENT\",\"branch\":\"main\"}"
 # updating an existing file: GET the path first, add its "sha" to the payload.
 ```

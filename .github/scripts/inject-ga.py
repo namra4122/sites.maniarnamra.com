@@ -4,7 +4,8 @@ skipping any file that already references the GA measurement ID / gtag.js."""
 import re
 import sys
 
-GA_ID = "G-J2YR2RVR6L"
+# measurement Id from the google analytics
+GA_ID = "G-4H49QFHPQK"
 SNIPPET = f"""<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
 <script>

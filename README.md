@@ -1,8 +1,8 @@
-# sites.arnavg.in
+# sites.maniarnamra.com
 
-Dumpyard for LLM-agent-generated static sites by Arnav Gupta
-([arnav.tech](https://arnav.tech)). Served via GitHub Pages at
-<https://sites.arnavg.in>.
+Dumpyard for LLM-agent-generated static sites by Namra Maniar.
+Served via Cloudflare at
+<https://sites.maniarnamra.com>.
 
 ## Layout
 
