@@ -9,7 +9,6 @@ Served via Cloudflare at
 - `/index.html` — apex page. Spartan. Keep it that way.
 - `/research/<report-name>/index.html` — reports.
 - `/learning/<guide-name>/index.html` — guides.
-- `/plans/<plan-name>/index.html` — project plans.
 - `/llms.txt` — instructions for LLMs uploading to this repo. Read it before adding anything.
 
 ## Rules
