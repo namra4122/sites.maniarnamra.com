@@ -16,7 +16,7 @@
 set -euo pipefail
 
 SKILL="publish-site-artifact"
-LEGACY_SKILL="publish-to-sites-arnavg-in"  # removed on install if present
+LEGACY_SKILL="publish-to-sites-maniarnamra-com"  # removed on install if present
 BASE_URL="${ADD_SKILL_BASE_URL:-https://sites.maniarnamra.com}"
 SRC_URL="${ADD_SKILL_URL:-$BASE_URL/skills/$SKILL/SKILL.md}"
 
