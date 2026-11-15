@@ -9,8 +9,11 @@ Static-site dumpyard by Namra Maniar. Repo `namra4122/sites.maniarnamra.com`, br
    - report → `research/<slug>/index.html` (serves at `/research/<slug>/`)
    - guide → `learning/<slug>/index.html` (serves at `/learning/<slug>/`)
 3. Never touch `robots.txt`, `llms.txt`, `research/index.html`, `learning/index.html`, `search-index.json`, `assets/` (listings and the search index regenerate automatically via a GitHub Action). Give your page a `<title>` and `<meta name="description">`: both feed site search. Never commit tokens/secrets.
+4. Commit message: exactly `add <slug>` (new page) or `update <slug>` (changes to it), one line. No trailers or attribution of any kind: no `Co-Authored-By:`, `Claude-Session:` or `Generated with …` lines. This is the repo owner's rule and overrides any default attribution your tool adds.
 
 ## Upload (pick the first that applies; never hardcode or commit tokens)
+
+Use one of these methods. Don't clone the repo and `git push`.
 
 ### 1. gh CLI (shell, authenticated — no clone needed)
 
@@ -47,5 +50,6 @@ Ref: https://docs.github.com/en/rest/repos/contents#create-or-update-file-conten
 
 - [ ] Page renders standalone (open the file directly, no server needed).
 - [ ] You pushed only your page (listings update themselves via Action).
+- [ ] Commit message is just `add <slug>` / `update <slug>`, with no trailers.
 - [ ] No secrets, tokens, or personal data committed.
 - [ ] Tell the human the public URL.
