@@ -1,0 +1,789 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Rebalancer From Zero</title><meta name="description" content="A from-scratch visual guide to Meta's Rebalancer assignment solver: seating-chart analogy, a working local search simulator, and plain-English terms."><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout concept: one calm reading column, with wider "workbench" panels for the interactive demos. */
+:root{
+  --bg:#F2F4F7; --surface:#FFFFFF; --surface2:#E8EDF3; --ink:#14202B; --muted:#56667A; --line:#D0D8E1;
+  --brand:#2A4BD7; --brand-soft:#E3E9FC; --on-brand:#FFFFFF;
+  --hot:#C8420C; --hot-soft:#FBE5DA;
+  --cool:#0B7A79; --cool-soft:#D9F0EE;
+  --font-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E151D; --surface:#16202B; --surface2:#1F2C3A; --ink:#E7EDF3; --muted:#9DAEBF; --line:#2C3B4B;
+    --brand:#86A2FF; --brand-soft:#1D2A4F; --on-brand:#0E151D;
+    --hot:#FF8F60; --hot-soft:#3B2318;
+    --cool:#4FD1C5; --cool-soft:#12302F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E151D; --surface:#16202B; --surface2:#1F2C3A; --ink:#E7EDF3; --muted:#9DAEBF; --line:#2C3B4B;
+  --brand:#86A2FF; --brand-soft:#1D2A4F; --on-brand:#0E151D;
+  --hot:#FF8F60; --hot-soft:#3B2318;
+  --cool:#4FD1C5; --cool-soft:#12302F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.6;padding-inline:16px;padding-block:0 72px}
+.wrap{max-width:940px;margin-inline:auto}
+.col{max-width:68ch}
+h1,h2,h3{font-family:var(--font-display);line-height:1.12;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.2rem,6vw,3.6rem);font-weight:750;letter-spacing:-.02em}
+h2{font-size:clamp(1.6rem,3.6vw,2.2rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.15rem;font-weight:650}
+p{margin:0 0 1em}
+a{color:var(--brand)}
+code,.mono{font-family:var(--font-mono);font-size:.88em}
+code{background:var(--surface2);padding:.1em .35em;border-radius:4px;overflow-wrap:anywhere}
+.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:.8rem}
+header.hero{padding-block:56px 28px}
+header.hero p.lead{font-size:1.25rem;color:var(--muted);margin-top:1.1rem}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:1.4rem}
+nav.toc a{font-size:.85rem;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:5px 12px;border-radius:999px}
+nav.toc a:hover{border-color:var(--brand)}
+section{padding-block:44px 8px;border-top:1px solid var(--line);margin-top:36px}
+section:first-of-type{border-top:none}
+section>h2{margin-bottom:.7rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+.panel.flush{padding:0;overflow:hidden}
+.note{font-size:.92rem;color:var(--muted)}
+.callout{background:var(--brand-soft);border-radius:10px;padding:14px 16px;margin:1.2rem 0}
+.callout strong{font-family:var(--font-display)}
+.term{background:var(--brand-soft);padding:.05em .4em;border-radius:4px;font-weight:500}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-weight:550;font-size:.92rem}
+.btn:hover{border-color:var(--brand)}
+.btn.primary{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+.btn[disabled]{opacity:.45;cursor:default}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.tbl-scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.k{font-weight:600}
+
+/* seating diagram */
+.seat-diagram{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:1.2rem 0}
+.tablebox{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.tablebox h3{font-size:.95rem;margin-bottom:10px;display:flex;justify-content:space-between;gap:8px}
+.tablebox h3 span{font-family:var(--font-mono);font-weight:400;font-size:.78rem;color:var(--muted)}
+.guests{display:flex;flex-wrap:wrap;gap:6px}
+.guest{font-size:.8rem;padding:3px 9px;border-radius:999px;background:var(--brand-soft);font-weight:500}
+.guest.b{background:var(--cool-soft)}
+.guest.c{background:var(--hot-soft)}
+
+/* big-number widget */
+.range-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.range-row label{display:block;font-weight:600;font-size:.92rem;margin-bottom:4px}
+.range-row input[type=range]{width:100%;accent-color:var(--brand)}
+.bignum{font-family:var(--font-display);font-size:clamp(1.8rem,5vw,2.8rem);font-weight:750;margin:.6rem 0 .1rem;overflow-wrap:anywhere}
+.bignum sup{font-size:.55em}
+
+/* rule cards */
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:1.2rem 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h3{margin-bottom:.4rem}
+.card ul{margin:.4rem 0 0;padding-left:1.1rem}
+.card li{margin-bottom:.55em}
+.card .spec{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);display:block}
+.tag{display:inline-block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:650;padding:2px 8px;border-radius:5px}
+.tag.rule{background:var(--hot-soft);color:var(--hot)}
+.tag.wish{background:var(--cool-soft);color:var(--cool)}
+
+/* simulator */
+.sim-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.sim-controls label{font-size:.88rem;color:var(--muted);margin-left:auto}
+.sim-controls select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-left:6px}
+.hosts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:720px){.hosts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.host{background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:12px;position:relative;transition:border-color .2s}
+.host.hot{border-color:var(--hot)}
+.host.skipped{opacity:.6}
+.host .hname{font-weight:650;font-size:.95rem;display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.host .hname small{font-family:var(--font-mono);font-weight:400;color:var(--muted);font-size:.72rem}
+.cells{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;margin:10px 0}
+.cell{aspect-ratio:1;border-radius:3px;background:var(--surface2)}
+.cell.on{background:var(--brand)}
+.cell.over{background:var(--hot)}
+.cell.moved{animation:pulse 1.2s ease-out 1;outline:2px solid var(--cool);outline-offset:1px}
+@keyframes pulse{0%{transform:scale(1.7)}100%{transform:scale(1)}}
+.meter{height:10px;border-radius:5px;background:var(--surface2);position:relative}
+.meter .fill{height:100%;border-radius:5px;background:var(--brand);transition:width .35s}
+.meter .fill.over{background:var(--hot)}
+.meter .mean{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.host .u{font-size:.82rem;margin-top:8px;font-variant-numeric:tabular-nums}
+.host .flag{position:absolute;top:-10px;right:10px;font-size:.68rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:5px;background:var(--hot);color:var(--surface)}
+.host .flag.skip{background:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.82rem;color:var(--muted);margin-top:12px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.sim-bottom{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px;margin-top:18px}
+@media (max-width:720px){.sim-bottom{grid-template-columns:minmax(0,1fr)}}
+.score{font-family:var(--font-display);font-size:2.2rem;font-weight:750;font-variant-numeric:tabular-nums;line-height:1}
+.spark{width:100%;height:70px;display:block;margin-top:8px}
+.spark polyline{fill:none;stroke:var(--brand);stroke-width:2.5;stroke-linejoin:round}
+.spark circle{fill:var(--brand)}
+.log{list-style:none;margin:0;padding:0;max-height:230px;overflow-y:auto;font-size:.9rem}
+.log li{padding:7px 10px;border-bottom:1px solid var(--line)}
+.log li:first-child{background:var(--brand-soft);border-radius:8px}
+.log li.final{background:var(--cool-soft);border-radius:8px}
+
+/* recipe stepper */
+.steps{list-style:none;margin:1.2rem 0;padding:0;display:grid;gap:0}
+.steps li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;padding-bottom:22px;position:relative}
+.steps li::before{content:"";position:absolute;left:19px;top:40px;bottom:0;width:2px;background:var(--line)}
+.steps li:last-child::before{display:none}
+.steps .n{width:40px;height:40px;border-radius:50%;background:var(--brand);color:var(--on-brand);display:grid;place-items:center;font-family:var(--font-display);font-weight:700}
+.steps h3{margin-bottom:.15rem;font-size:1.05rem}
+.steps p{margin:0;color:var(--muted);font-size:.95rem}
+.steps .loop{display:inline-block;margin-top:6px;font-size:.78rem;font-weight:600;color:var(--cool);background:var(--cool-soft);padding:2px 8px;border-radius:5px}
+
+/* landscape svg */
+.svgwrap{width:100%;max-width:560px;margin:1rem 0}
+.svgwrap svg{width:100%;height:auto;display:block}
+.ground{fill:var(--surface2);stroke:var(--muted);stroke-width:2}
+.s-text{fill:var(--ink);font-family:var(--font-body);font-size:13px}
+.s-muted{fill:var(--muted);font-family:var(--font-body);font-size:12px}
+.s-hot{fill:var(--hot)}
+.s-cool{fill:var(--cool)}
+.s-line{stroke:var(--muted);stroke-width:1.5;fill:none}
+
+/* switch matrix */
+.sw{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:6px;font-family:var(--font-mono);font-size:.85rem;background:var(--surface2);color:var(--muted)}
+.sw.one{background:var(--brand);color:var(--on-brand);font-weight:600}
+.matrix td,.matrix th{padding:6px 10px;text-align:center}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+
+/* dependency graph */
+.gnode rect{fill:var(--surface2);stroke:var(--line);stroke-width:1.5;transition:fill .2s,stroke .2s}
+.gnode text{fill:var(--muted);font-family:var(--font-body);font-size:13px;text-anchor:middle;dominant-baseline:central}
+.gnode.hit rect{fill:var(--hot-soft);stroke:var(--hot)}
+.gnode.hit text{fill:var(--ink);font-weight:600}
+.gedge{stroke:var(--line);stroke-width:2;fill:none}
+.gedge.hit{stroke:var(--hot)}
+.move-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.btn.on{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+
+/* priority widget */
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0}
+.opt{border:2px solid var(--line);border-radius:12px;padding:14px;background:var(--surface)}
+.opt.win{border-color:var(--cool);background:var(--cool-soft)}
+.opt h3{display:flex;justify-content:space-between;gap:8px}
+.opt dl{margin:.5rem 0 0;display:grid;grid-template-columns:auto auto;gap:2px 14px;font-size:.92rem;justify-content:start}
+.opt dt{color:var(--muted)}
+.opt dd{margin:0;font-variant-numeric:tabular-nums;font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:8px 14px;font-weight:550;font-size:.92rem}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--on-brand)}
+
+/* code */
+pre{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto;font-family:var(--font-mono);font-size:.8rem;line-height:1.6;margin:1rem 0}
+pre .c{color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:1.2rem 0}
+.fact{border-left:3px solid var(--brand);padding:2px 0 2px 14px}
+.fact b{font-family:var(--font-display);font-size:1.5rem;display:block;line-height:1.2}
+footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);font-size:.9rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Meta's open-source Rebalancer</div>
+  <h1>Who sits where? How Meta places millions of jobs on millions of computers.</h1>
+  <p class="lead col">You do not need to know anything about servers or infrastructure. We start with a wedding seating chart and build up from there. Every technical word gets explained the first time it shows up.</p>
+  <nav class="toc" aria-label="Sections">
+    <a href="#idea">1. The idea</a>
+    <a href="#hard">2. Why it is hard</a>
+    <a href="#rules">3. Rules and wishes</a>
+    <a href="#local">4. Strategy one: step by step</a>
+    <a href="#stuck">5. Where it gets stuck</a>
+    <a href="#mip">6. Strategy two: math engine</a>
+    <a href="#fast">7. Why it is fast</a>
+    <a href="#priority">8. Many wishes</a>
+    <a href="#try">9. Try it</a>
+    <a href="#words">Word list</a>
+  </nav>
+</header>
+
+<!-- 1 ------------------------------------------------------------------ -->
+<section id="idea">
+  <div class="eyebrow">1. The idea</div>
+  <h2>It is a seating chart</h2>
+  <div class="col">
+    <p>You are planning a wedding. You have guests. You have tables. Your job is to decide which guest sits at which table. Every guest gets exactly one seat.</p>
+    <p>Rebalancer solves this kind of puzzle. The textbook name is an <span class="term">assignment problem</span>: a pile of things, a set of places, and a decision about which thing goes where.</p>
+  </div>
+
+  <div class="seat-diagram" role="img" aria-label="Nine guests spread over three tables">
+    <div class="tablebox"><h3>Table A <span>seats: 4</span></h3><div class="guests"><span class="guest">Ana</span><span class="guest">Ben</span><span class="guest">Chi</span></div></div>
+    <div class="tablebox"><h3>Table B <span>seats: 4</span></h3><div class="guests"><span class="guest b">Dev</span><span class="guest b">Eli</span><span class="guest b">Fay</span><span class="guest b">Gus</span></div></div>
+    <div class="tablebox"><h3>Table C <span>seats: 4</span></h3><div class="guests"><span class="guest c">Hal</span><span class="guest c">Ivy</span></div></div>
+  </div>
+
+  <div class="col"><p>Now swap the words. At Meta the "guests" are programs and pieces of data. The "tables" are the physical computers (servers) in data centers. Here is the translation:</p></div>
+  <div class="panel flush"><div class="tbl-scroll">
+  <table>
+    <thead><tr><th>In the wedding</th><th>At Meta</th><th>Rebalancer's word</th></tr></thead>
+    <tbody>
+      <tr><td class="k">A guest</td><td>A program, a slice of a database, a job to run</td><td><span class="term">object</span></td></tr>
+      <tr><td class="k">A table</td><td>One server (a computer)</td><td><span class="term">container</span></td></tr>
+      <tr><td class="k">Number of seats</td><td>How much memory or processing power a server has, and how much each program needs</td><td><span class="term">dimension</span> (a number attached to an object or container)</td></tr>
+      <tr><td class="k">A room with several tables</td><td>A rack: a metal shelf of servers that share one power supply</td><td><span class="term">scope</span> (a way to group containers)</td></tr>
+      <tr><td class="k">A family that came together</td><td>Several copies of the same program</td><td><span class="term">partition</span> / group (a way to group objects)</td></tr>
+    </tbody>
+  </table></div></div>
+  <p class="note" style="margin-top:12px">Everything else in Rebalancer builds on these five ideas: objects, containers, dimensions, scopes, partitions.</p>
+</section>
+
+<!-- 2 ------------------------------------------------------------------ -->
+<section id="hard">
+  <div class="eyebrow">2. Why it is hard</div>
+  <h2>Too many possible seating charts</h2>
+  <div class="col">
+    <p>With 3 guests and 2 tables you can check every option by hand. Each guest has as many choices as there are tables, so the total is <em>tables multiplied by itself once per guest</em>. Try the sliders.</p>
+  </div>
+  <div class="panel">
+    <div class="range-row">
+      <div><label for="g">Guests: <output id="gOut">20</output></label><input id="g" type="range" min="2" max="40" value="20"></div>
+      <div><label for="t">Tables: <output id="tOut">5</output></label><input id="t" type="range" min="2" max="10" value="5"></div>
+    </div>
+    <div class="bignum" id="combos">95 trillion</div>
+    <div>possible seating charts</div>
+    <p style="margin:.8rem 0 0" id="combosTime"></p>
+    <p class="note" style="margin:.4rem 0 0">Assumes a computer that checks one billion seating charts every second, which is very fast.</p>
+  </div>
+  <div class="col" style="margin-top:1.2rem">
+    <p>Meta has millions of servers, so the real count has millions of digits. Checking all of it is not an option. Computer scientists call problems like this <span class="term">NP-hard</span>: nobody knows a trick that always avoids searching an enormous number of options.</p>
+    <p>So Rebalancer does not check everything. It has two different strategies for finding a good answer without trying every option. Before those, you need to know what "good" means.</p>
+  </div>
+</section>
+
+<!-- 3 ------------------------------------------------------------------ -->
+<section id="rules">
+  <div class="eyebrow">3. Rules and wishes</div>
+  <h2>What makes a seating chart good</h2>
+  <div class="col"><p>You describe "good" to Rebalancer in two kinds of statements.</p></div>
+  <div class="two">
+    <div class="card">
+      <span class="tag rule">Rules · constraints</span>
+      <h3 style="margin-top:.6rem">Must be true</h3>
+      <ul>
+        <li><b>A table cannot hold more than 4 people.</b><br>For servers: a computer cannot use more memory than it has. <span class="spec">CapacitySpec</span></li>
+        <li><b>Table C is being cleaned. Keep it empty.</b><br>For servers: a machine going down for maintenance must hold nothing. <span class="spec">ToFreeSpec</span></li>
+        <li><b>Never seat two members of one family at the same table.</b><br>For servers: two copies of a program must not share a rack, so one power failure cannot kill both. <span class="spec">GroupCountSpec</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="tag wish">Wishes · goals</span>
+      <h3 style="margin-top:.6rem">Make as good as possible</h3>
+      <ul>
+        <li><b>Keep the tables about equally full.</b><br>For servers: no machine should be overloaded while others sit idle. <span class="spec">BalanceSpec</span></li>
+        <li><b>Move as few people as possible from where they sit now.</b><br>For servers: moving a program costs time and risk. <span class="spec">MinimizeMovementSpec</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="col">
+    <p>Rebalancer ships these as ready-made templates called <span class="term">specs</span> (short for specifications). You fill in a form, such as "which number to measure" and "which group of containers". You do not write the math yourself. The grey names above are the real spec names in the code.</p>
+    <p>One more detail. If the starting layout already breaks a rule, Rebalancer does not give up. It treats "fix the broken rule" as a very high priority wish, and it never lets that rule get worse while fixing it.</p>
+  </div>
+</section>
+
+<!-- 4 ------------------------------------------------------------------ -->
+<section id="local">
+  <div class="eyebrow">4. Strategy one</div>
+  <h2>Local search: fix the worst table, repeat</h2>
+  <div class="col">
+    <p>This is the default strategy, and the one Meta uses for its biggest problems. The plan is simple:</p>
+    <p><b>Look at the current seating. Find the most overcrowded table. Try moving each person from it to every other table. Do the single move that helps the most. Repeat.</b></p>
+    <p>"Local" means it only ever looks at small changes near the current layout. Below is a working copy of that loop. There are 12 tasks (the blue squares) and 4 hosts (servers). Host 1 is twice as big as the others. All tasks start crammed on host0, which is over its limit. The black line on each bar marks the average fullness, which is where a perfectly even layout would put every host.</p>
+  </div>
+
+  <div class="panel" id="sim">
+    <div class="sim-controls">
+      <button class="btn primary" id="stepBtn">Do one step</button>
+      <button class="btn" id="playBtn">Play</button>
+      <button class="btn" id="resetBtn">Reset</button>
+      <label>Start from <select id="preset"><option value="crammed">everything on host0</option><option value="uneven">a lopsided mix</option></select></label>
+    </div>
+    <div class="hosts" id="hosts"></div>
+    <div class="legend">
+      <span><i style="background:var(--brand)"></i>a task</span>
+      <span><i style="background:var(--hot)"></i>a task beyond the host's limit</span>
+      <span><i style="background:var(--surface2)"></i>free room</span>
+      <span><i style="background:var(--ink);width:3px"></i>average fullness</span>
+    </div>
+    <div class="sim-bottom">
+      <div>
+        <div class="note">Unevenness score (lower is better)</div>
+        <div class="score" id="score">0</div>
+        <svg class="spark" id="spark" viewBox="0 0 300 70" preserveAspectRatio="none" role="img" aria-label="Score over time"></svg>
+        <div class="note" id="stats"></div>
+      </div>
+      <div>
+        <div class="note" style="margin-bottom:6px">What the algorithm is thinking</div>
+        <ol class="log" id="log"></ol>
+      </div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:10px">Simplified on purpose: this demo has one kind of move (move a single task) and one wish (even out fullness). The real thing has dozens of move types and more than 25 kinds of rules and wishes. The score here is the sum of squared gaps from the average, a cousin of Rebalancer's real balance formulas.</p>
+
+  <h3 style="margin-top:2rem">The recipe, in plain steps</h3>
+  <ol class="steps">
+    <li><div class="n">1</div><div><h3>Score the current layout</h3><p>One number that says how far the layout is from ideal. Lower is better.</p></div></li>
+    <li><div class="n">2</div><div><h3>Rank hosts from hottest to coldest</h3><p>"Hot" means a host that adds the most to the bad score, such as the most overloaded one. In the code this job belongs to a piece called <code>HotContainerSelector</code>.</p></div></li>
+    <li><div class="n">3</div><div><h3>Take the hottest host and try moves out of it</h3><p>Every task on it, to every other host. Each kind of small change is called a <span class="term">move type</span>. "Move one task" is the simplest. "Swap two tasks" is another. You choose which ones Rebalancer may use.</p></div></li>
+    <li><div class="n">4</div><div><h3>Check each move against the rules, then keep the best</h3><p>A move is thrown out if it breaks a rule, makes a higher-priority wish worse, or does not improve the score. Rebalancer only accepts strictly better moves.</p></div></li>
+    <li><div class="n">5</div><div><h3>Applied a move? Re-rank and go again. No move helped? Skip this host for now.</h3><p>After a successful move the ranking changes, so Rebalancer re-ranks. A host with no useful move gets set aside until the next pass.</p><span class="loop">loop back to step 2</span></div></li>
+    <li><div class="n">6</div><div><h3>Stop</h3><p>When no host can be improved, when the score reaches the best value mathematically possible, or when a time or move limit runs out.</p></div></li>
+  </ol>
+  <p class="note">The real loop lives in <code>CoreLocalSearchSolve.cpp</code>, in a function called <code>solve()</code>. It is about 90 lines and follows these six steps closely.</p>
+</section>
+
+<!-- 5 ------------------------------------------------------------------ -->
+<section id="stuck">
+  <div class="eyebrow">5. Where it gets stuck</div>
+  <h2>The hiker in the fog</h2>
+  <div class="col">
+    <p>Local search is like a hiker in thick fog who always walks downhill, because lower ground means a better score. It reaches the bottom of a valley and stops: every direction from there goes up. The hiker cannot see that a much deeper valley exists further away.</p>
+  </div>
+  <div class="svgwrap">
+    <svg viewBox="0 0 400 190" role="img" aria-label="A hill-and-valley curve. A ball rests in a shallow valley on the left. A deeper valley lies to the right.">
+      <path class="ground" d="M0,45 C60,45 90,115 130,115 C170,115 185,55 225,62 C265,70 285,150 325,150 C365,150 385,110 400,100 L400,190 L0,190 Z"/>
+      <circle cx="130" cy="106" r="9" class="s-hot"/>
+      <text class="s-text" x="130" y="78" text-anchor="middle">You are here</text>
+      <text class="s-muted" x="130" y="93" text-anchor="middle">every small step goes uphill</text>
+      <circle cx="325" cy="141" r="9" fill="none" class="s-line" stroke-dasharray="4 3"/>
+      <text class="s-text" x="325" y="118" text-anchor="middle">Better answer</text>
+      <text class="s-muted" x="325" y="133" text-anchor="middle">too far to see</text>
+      <path class="s-line" d="M150,168 L305,168" stroke-dasharray="3 4"/>
+      <text class="s-muted" x="228" y="183" text-anchor="middle">needs a big jump, not a small step</text>
+    </svg>
+  </div>
+  <div class="col">
+    <p>The stuck spot is called a <span class="term">local optimum</span>: the best layout reachable by small changes, but not necessarily the best layout that exists. The score at the very bottom of the deepest valley is the <span class="term">global optimum</span>.</p>
+    <p>Rebalancer's own Eight Queens example shows this. The puzzle is to place 8 chess queens so none attack each other. Run with simple one-queen moves, the local search gets stuck. A comment in the example's code explains why: none of the simple individual moves can take the board to a perfect solution. The example offers a <code>--optimal</code> option that switches to the second strategy, which solves it.</p>
+    <p>Two ways to reduce the problem: give the search more kinds of moves (swap two, rotate three), or switch strategies.</p>
+  </div>
+</section>
+
+<!-- 6 ------------------------------------------------------------------ -->
+<section id="mip">
+  <div class="eyebrow">6. Strategy two</div>
+  <h2>The math engine (the "MIP solver")</h2>
+  <div class="col">
+    <p>The other strategy turns your seating problem into equations and hands them to a specialist program. The acronym is <span class="term">MIP</span>, short for Mixed-Integer Programming. That is a branch of math for problems where some quantities must be whole numbers, such as yes or no, because a guest cannot sit half at a table.</p>
+    <p>Here is how it works, in four moves:</p>
+  </div>
+  <ol class="steps">
+    <li><div class="n">1</div><div><h3>Give every guest-and-table pair a switch</h3><p>1 means "this guest sits at this table". 0 means "no".</p></div></li>
+    <li><div class="n">2</div><div><h3>Write the rules as arithmetic on the switches</h3><p>"Each guest has exactly one switch on." "At each table, the sizes of the guests with switches on must add up to at most the seat count."</p></div></li>
+    <li><div class="n">3</div><div><h3>Write the wish as one number to make small</h3><p>For example, how unequal the tables are.</p></div></li>
+    <li><div class="n">4</div><div><h3>Hand it to a ready-made solver</h3><p>Tools such as HiGHS (free), Gurobi and FICO Xpress (paid) use decades of math tricks to find the best switch settings. If they finish, they can prove that nothing better exists.</p></div></li>
+  </ol>
+
+  <div class="panel flush"><div class="tbl-scroll">
+    <table class="matrix" aria-label="Example switch grid">
+      <thead><tr><th>Guest</th><th>Table A</th><th>Table B</th><th>Table C</th></tr></thead>
+      <tbody>
+        <tr><td>Ana</td><td><span class="sw one">1</span></td><td><span class="sw">0</span></td><td><span class="sw">0</span></td></tr>
+        <tr><td>Ben</td><td><span class="sw one">1</span></td><td><span class="sw">0</span></td><td><span class="sw">0</span></td></tr>
+        <tr><td>Chi</td><td><span class="sw">0</span></td><td><span class="sw one">1</span></td><td><span class="sw">0</span></td></tr>
+        <tr><td>Dev</td><td><span class="sw">0</span></td><td><span class="sw one">1</span></td><td><span class="sw">0</span></td></tr>
+        <tr><td>Eli</td><td><span class="sw">0</span></td><td><span class="sw">0</span></td><td><span class="sw one">1</span></td></tr>
+        <tr><td>Fay</td><td><span class="sw">0</span></td><td><span class="sw">0</span></td><td><span class="sw one">1</span></td></tr>
+      </tbody>
+    </table></div></div>
+  <div class="col" style="margin-top:1rem">
+    <p>6 guests and 3 tables need 18 switches. Easy. Meta's biggest problem in the paper has about 1.8 million objects and 27,000 containers. That is roughly <b>49 billion switches</b>, which is more than the solver can hold or reason about. This is why the math engine is used on small and medium problems.</p>
+  </div>
+
+  <h3 style="margin-top:2rem">The two strategies side by side</h3>
+  <div class="panel flush"><div class="tbl-scroll">
+  <table>
+    <thead><tr><th></th><th>Local search<br><span style="text-transform:none;letter-spacing:0;font-weight:500">the hiker</span></th><th>Math engine (MIP)<br><span style="text-transform:none;letter-spacing:0;font-weight:500">the surveyor with a full map</span></th></tr></thead>
+    <tbody>
+      <tr><td class="k">Finds the best possible answer?</td><td>Not guaranteed. Can get stuck.</td><td>Yes, given enough time, and it can prove it.</td></tr>
+      <tr><td class="k">Big problems?</td><td>Yes. Millions of objects.</td><td>No. Slows down or runs out of memory.</td></tr>
+      <tr><td class="k">Can you see why it did something?</td><td>Yes. Each move is a step you can read.</td><td>Mostly a black box.</td></tr>
+      <tr><td class="k">Good for</td><td>Large problems where a very good answer fast is enough</td><td>Small problems, or checking how far from perfect local search landed</td></tr>
+    </tbody>
+  </table></div></div>
+  <div class="callout col"><strong>The nice design choice:</strong> you describe the problem once, in terms of objects, containers, rules and wishes. Then you pick the strategy. Switching from one strategy to the other does not mean rewriting the problem.</div>
+</section>
+
+<!-- 7 ------------------------------------------------------------------ -->
+<section id="fast">
+  <div class="eyebrow">7. Why it is fast</div>
+  <h2>Only recalculate what changed</h2>
+  <div class="col">
+    <p>Local search tries a huge number of moves, so each try has to be cheap. The trick is the same one a spreadsheet uses. When you change one cell, the spreadsheet does not recompute every formula. It recomputes only the cells that depend on the one you changed.</p>
+    <p>Rebalancer stores the score as a tree of small calculations, called the <span class="term">expression graph</span>. Hosts feed into racks, racks feed into the total score. Pick a move below and see which boxes need new numbers.</p>
+  </div>
+  <div class="panel">
+    <div class="move-btns" role="group" aria-label="Pick a move">
+      <button class="btn on" data-m="0,1">Move a task: host0 → host1</button>
+      <button class="btn" data-m="0,2">Move a task: host0 → host2</button>
+      <button class="btn" data-m="2,3">Move a task: host2 → host3</button>
+    </div>
+    <svg viewBox="0 0 440 250" style="width:100%;height:auto;max-width:620px;display:block" role="img" aria-label="Tree: hosts feed racks, racks feed the total score">
+      <g id="edges"></g>
+      <g id="nodes"></g>
+    </svg>
+    <p id="gcount" style="margin:.8rem 0 0;font-weight:600"></p>
+    <p class="note" style="margin:.2rem 0 0">Orange boxes are recalculated. Grey boxes keep their old values. With millions of hosts, the grey part is nearly everything.</p>
+  </div>
+  <div class="col" style="margin-top:1.2rem">
+    <p>Two more speed-ups from the research paper: many candidate moves are tested at the same time on different processor cores, and the graph stores shared information once instead of once per guest-table pair.</p>
+  </div>
+</section>
+
+<!-- 8 ------------------------------------------------------------------ -->
+<section id="priority">
+  <div class="eyebrow">8. Many wishes</div>
+  <h2>What if the wishes disagree?</h2>
+  <div class="col">
+    <p>Say you have two wishes: "tables equally full" and "move few people". Sometimes they pull in opposite directions. Rebalancer gives you two ways to rank them.</p>
+    <p><b>Weights</b> are importance numbers. The solver adds up each wish times its weight and minimizes the total, so wishes trade off. <b>Tiers</b> are strict order. Wish one is fully handled first. Wish two only breaks ties. The code compares tiers like a dictionary sorts words: the first letter decides, and later letters only matter if the first ones match.</p>
+    <p>Two candidate layouts are below. Lower numbers are better. Slide the weight on "moves" and flip between the two modes.</p>
+  </div>
+  <div class="panel">
+    <div class="seg" role="group" aria-label="Ranking mode" style="margin-bottom:14px">
+      <button id="modeW" aria-pressed="true">Weights</button>
+      <button id="modeT" aria-pressed="false">Tiers</button>
+    </div>
+    <div id="wRow"><label for="w" style="font-weight:600;font-size:.92rem">Importance of "move few people": <output id="wOut">1.0</output>× (balance is fixed at 1×)</label>
+    <input id="w" type="range" min="0" max="3" step="0.05" value="1" style="width:100%;accent-color:var(--brand)"></div>
+    <div id="tRow" hidden class="note">Tier 1: balance. Tier 2: moves. Balance decides first. Moves only matter if balance is exactly tied.</div>
+    <div class="opts">
+      <div class="opt" id="optA"><h3>Layout A <span class="mono" id="resA"></span></h3><dl><dt>Unevenness</dt><dd>4</dd><dt>People moved</dt><dd>9</dd></dl></div>
+      <div class="opt" id="optB"><h3>Layout B <span class="mono" id="resB"></span></h3><dl><dt>Unevenness</dt><dd>5</dd><dt>People moved</dt><dd>2</dd></dl></div>
+    </div>
+    <p id="prioMsg" style="margin:0;font-weight:600"></p>
+  </div>
+  <p class="note" style="margin-top:10px">In the code, tiers are created with <code>addGoalBoundary()</code> and weights are the second argument of <code>addGoal()</code>.</p>
+</section>
+
+<!-- 9 ------------------------------------------------------------------ -->
+<section id="try">
+  <div class="eyebrow">9. Try it</div>
+  <h2>What the real code looks like</h2>
+  <div class="col">
+    <p>This is adapted from the Quick Example in the project's README. Four tasks start unevenly on two hosts: three on host0, one on host1. Read the grey comments first.</p>
+  </div>
+<pre><span class="c"># make a solver. The two names only label the logs</span>
+solver = ProblemSolver(service_name="rebalancer", service_scope="example")
+
+<span class="c"># the words for "guest" and "table" in this problem</span>
+solver.set_object_name("task")
+solver.set_container_name("host")
+
+<span class="c"># who sits where right now</span>
+solver.set_assignment({"host0": ["task0", "task1", "task2"],
+                       "host1": ["task3"]})
+
+<span class="c"># dimensions: each task needs 10 memory, each host has 20</span>
+solver.add_object_dimension("memory", {"task0": 10, "task1": 10, "task2": 10, "task3": 10})
+solver.add_container_dimension("memory", {}, default_value=20.0)
+
+<span class="c"># a RULE: no host may use more memory than it has</span>
+solver.add_constraint(ConstraintSpec(capacitySpec=CapacitySpec(
+    name="memory_capacity", scope="host", dimension="memory")))
+
+<span class="c"># the STRATEGY: local search, allowed to move one task or swap two</span>
+solver.add_solver(SolverSpec(localSearchSolverSpec=LocalSearchSolverSpec(
+    moveTypeList=[MoveTypeSpec(singleMoveTypeSpec=SingleMoveTypeSpec()),
+                  MoveTypeSpec(swapMoveTypeSpec=SwapMoveTypeSpec())])))
+
+solution = solver.solve()
+print(solution["assignment"])   <span class="c"># a balanced 2-and-2 split</span></pre>
+  <div class="col">
+    <p>A good order for exploring on your own:</p>
+    <ol>
+      <li>Install the Python package with <code>pip install rebalancer</code> (Python 3.12 or newer, on Linux or an Apple-silicon Mac). Run the example above.</li>
+      <li>Read the tutorial in <code>website/docs/getting-started/first-model.md</code>. It builds the same tasks-and-hosts story step by step.</li>
+      <li>Run the Eight Queens example <code>examples/eightqueens/eightqueens.py</code> twice, once as is and once with <code>--optimal</code>, to see the two strategies disagree.</li>
+      <li>Open the visual debugger, <b>Rebalancer Explorer</b>. It lets you compare a before and after layout and try "what if I moved this one?". Start it with <code>docker compose up --build</code> and open <code>localhost:3000</code>.</li>
+      <li>Only then read the C++: <code>solver/solvers/CoreLocalSearchSolve.cpp</code>, then the move types in <code>solver/moves/</code>.</li>
+    </ol>
+  </div>
+
+  <h3 style="margin-top:2rem">How big does it get at Meta?</h3>
+  <div class="facts">
+    <div class="fact"><b>1.8 million</b>objects and 27,000 containers in the largest sharding problem, solved with a 5-minute limit</div>
+    <div class="fact"><b>700,000</b>servers placed into 6,000 reservations in the largest service-placement problem</div>
+    <div class="fact"><b>Tens of millions</b>of solves per week across Meta's data centers</div>
+  </div>
+  <p class="note">Figures come from the OSDI 2024 paper. I read it through a summary, so check the PDF for exact numbers before quoting them.</p>
+</section>
+
+<!-- Words -------------------------------------------------------------- -->
+<section id="words">
+  <div class="eyebrow">Word list</div>
+  <h2>Every term, in plain English</h2>
+  <div class="panel flush"><div class="tbl-scroll">
+  <table>
+    <thead><tr><th>Term</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Assignment problem</td><td>Decide which place each thing goes, with each thing in exactly one place.</td></tr>
+      <tr><td class="k">Object / container</td><td>The thing being placed (guest, task) and the place it goes (table, server).</td></tr>
+      <tr><td class="k">Dimension</td><td>A number attached to an object or container, such as memory needed or memory available.</td></tr>
+      <tr><td class="k">Scope</td><td>A way to bundle containers, like racks of servers. A "scope item" is one bundle, such as rack 1.</td></tr>
+      <tr><td class="k">Partition / group</td><td>A way to bundle objects, like all the copies of one program.</td></tr>
+      <tr><td class="k">Constraint</td><td>A rule that must hold.</td></tr>
+      <tr><td class="k">Goal / objective</td><td>A wish: a score the solver tries to make as small as possible.</td></tr>
+      <tr><td class="k">Spec</td><td>A ready-made rule or wish template you fill in, such as <code>CapacitySpec</code> or <code>BalanceSpec</code>.</td></tr>
+      <tr><td class="k">Solver</td><td>The algorithm that searches for a good layout.</td></tr>
+      <tr><td class="k">Local search</td><td>Strategy one: repeatedly make the single best small improvement.</td></tr>
+      <tr><td class="k">Hot container</td><td>A container that contributes a lot to a bad score, so it gets looked at first.</td></tr>
+      <tr><td class="k">Move type</td><td>A kind of small change the search may try: move one, swap two, rotate three.</td></tr>
+      <tr><td class="k">Local optimum</td><td>A layout where no small change helps, even though a better layout exists elsewhere.</td></tr>
+      <tr><td class="k">MIP (Mixed-Integer Programming)</td><td>Turning the problem into equations with whole-number switches, then letting a math program solve it.</td></tr>
+      <tr><td class="k">Optimal solver</td><td>Rebalancer's name for its MIP-based strategy. It uses HiGHS, Gurobi or FICO Xpress behind the scenes.</td></tr>
+      <tr><td class="k">NP-hard</td><td>A problem with no known shortcut that always avoids searching an enormous number of options.</td></tr>
+      <tr><td class="k">Expression graph</td><td>The tree of small calculations that produces the score, so only the changed parts get recomputed.</td></tr>
+      <tr><td class="k">Explorer</td><td>Rebalancer's web page for looking at a solved problem and testing what-if moves.</td></tr>
+    </tbody>
+  </table></div></div>
+</section>
+
+<footer>
+  <p>Sources: <a href="https://facebook.github.io/rebalancer/docs/intro">Rebalancer docs</a> · <a href="https://github.com/facebook/rebalancer">GitHub repository</a> · <a href="https://www.usenix.org/system/files/osdi24-kumar.pdf">OSDI 2024 paper, "Optimizing Resource Allocation in Hyperscale Datacenters"</a>. The step-by-step recipe comes from reading <code>CoreLocalSearchSolve.cpp</code> and the move-types documentation in the repository.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id)};
+
+  /* ---------- 2. big numbers ---------- */
+  function fmtSci(v){
+    if(v<1e6) return Math.round(v).toLocaleString();
+    var e=Math.floor(Math.log10(v)), m=v/Math.pow(10,e);
+    if(e<15){
+      var names=[[1e12,"trillion"],[1e9,"billion"],[1e6,"million"]];
+      for(var i=0;i<names.length;i++){ if(v>=names[i][0]) return (v/names[i][0]).toFixed(v/names[i][0]<10?1:0)+" "+names[i][1]; }
+    }
+    return m.toFixed(1)+" × 10<sup>"+e+"</sup>";
+  }
+  function fmtTime(sec){
+    if(sec<1) return "less than a second";
+    if(sec<60) return Math.round(sec)+" seconds";
+    if(sec<3600) return Math.round(sec/60)+" minutes";
+    if(sec<86400) return Math.round(sec/3600)+" hours";
+    if(sec<31557600) return Math.round(sec/86400)+" days";
+    var y=sec/31557600;
+    if(y<1e6) return Math.round(y).toLocaleString()+" years";
+    if(y<1e9) return (y/1e6).toFixed(1)+" million years";
+    if(y<1e12){ var b=y/1e9; return b.toFixed(b<10?1:0)+" billion years"+(b>13.8?", longer than the universe has existed (about 13.8 billion years)":""); }
+    return "far longer than the universe has existed";
+  }
+  function updCombos(){
+    var g=+$("g").value, t=+$("t").value;
+    $("gOut").textContent=g; $("tOut").textContent=t;
+    var v=Math.pow(t,g);
+    $("combos").innerHTML=fmtSci(v);
+    $("combosTime").textContent="Checking every one would take about "+fmtTime(v/1e9)+".";
+  }
+  $("g").addEventListener("input",updCombos); $("t").addEventListener("input",updCombos); updCombos();
+
+  /* ---------- 4. simulator ---------- */
+  var HOSTS=[{n:"host0",cap:10},{n:"host1",cap:20},{n:"host2",cap:10},{n:"host3",cap:10}];
+  var N=12, TOTAL=HOSTS.reduce(function(s,h){return s+h.cap},0), MEAN=N/TOTAL*100;
+  var st, timer=null;
+
+  function util(a,h){return a[h].length/HOSTS[h].cap*100}
+  function contrib(a,h){var d=util(a,h)-MEAN;return d*d}
+  function scoreOf(a){var s=0;for(var h=0;h<HOSTS.length;h++)s+=contrib(a,h);return s/100}
+  function fmt1(x){return x.toFixed(1)}
+
+  function init(){
+    var a=HOSTS.map(function(){return []});
+    if($("preset").value==="crammed"){ for(var i=0;i<N;i++)a[0].push(i); }
+    else { var seq=[1,3,3,0,1,3,2,3,3,1,3,3]; for(var j=0;j<N;j++)a[seq[j]].push(j); }
+    st={a:a,skip:{},cycle:1,inCycle:0,moves:0,done:false,hist:[scoreOf(a)],log:[],hot:-1,last:null};
+    pushLog("Start. Score "+fmt1(st.hist[0])+". The black line is the average fullness ("+Math.round(MEAN)+"%).");
+    render();
+  }
+  function pushLog(t,cls){st.log.unshift({t:t,c:cls||""}); if(st.log.length>40)st.log.pop()}
+
+  function step(){
+    if(st.done) return false;
+    var a=st.a, h;
+    var order=[];
+    for(h=0;h<HOSTS.length;h++) if(!st.skip[h]) order.push(h);
+    order.sort(function(x,y){return contrib(a,y)-contrib(a,x)||x-y});
+    st.last=null;
+    if(!order.length){
+      if(st.inCycle>0){
+        pushLog("Pass "+st.cycle+" is over after "+st.inCycle+" move"+(st.inCycle>1?"s":"")+". Moves were made, so start another pass and give every host a fresh chance.");
+        st.cycle++; st.inCycle=0; st.skip={}; st.hot=-1; render(); return true;
+      }
+      st.done=true; st.hot=-1;
+      pushLog("Finished. A full pass found nothing to improve. Final score "+fmt1(scoreOf(a))+". This is a local optimum: no single move helps.","final");
+      render(); return false;
+    }
+    h=order[0]; st.hot=h;
+    var name=HOSTS[h].n;
+    if(a[h].length===0){
+      st.skip[h]=true;
+      pushLog("Hottest remaining: "+name+" ("+Math.round(util(a,h))+"% full). It is empty, so there is nothing to move out. Skip it.");
+      render(); return true;
+    }
+    var cur=scoreOf(a), best=null, tried=0, blocked=0, d;
+    for(d=0;d<HOSTS.length;d++){
+      if(d===h) continue;
+      tried+=a[h].length;
+      if(a[d].length+1>HOSTS[d].cap){ blocked+=a[h].length; continue; }
+      var uh=(a[h].length-1)/HOSTS[h].cap*100, ud=(a[d].length+1)/HOSTS[d].cap*100;
+      var s=0;
+      for(var k=0;k<HOSTS.length;k++){
+        var u = k===h?uh : k===d?ud : util(a,k);
+        s+=(u-MEAN)*(u-MEAN);
+      }
+      s/=100;
+      if(best===null||s<best.s-1e-9) best={d:d,s:s};
+    }
+    var why="Hottest: "+name+" ("+Math.round(util(a,h))+"% full). Tried "+tried+" possible moves out of it"+(blocked?" ("+blocked+" rejected because the target host would go over its limit)":"")+". ";
+    if(best && best.s<cur-1e-9){
+      var task=a[h].pop(); a[best.d].push(task);
+      st.moves++; st.inCycle++; st.hist.push(best.s);
+      st.last={task:task,to:best.d};
+      pushLog(why+"Best: move task"+task+" to "+HOSTS[best.d].n+". Score "+fmt1(cur)+" → "+fmt1(best.s)+". Accepted.");
+    } else {
+      st.skip[h]=true;
+      pushLog(why+"None of them lowers the score. Give up on "+name+" for this pass and try the next hottest.");
+    }
+    render(); return true;
+  }
+
+  function render(){
+    var a=st.a, html="";
+    for(var h=0;h<HOSTS.length;h++){
+      var cap=HOSTS[h].cap, n=a[h].length, u=util(a,h), cells="";
+      var total=Math.max(cap,n);
+      for(var i=0;i<total;i++){
+        var cls="cell";
+        if(i<n){ cls+= i>=cap?" over":" on"; if(st.last && st.last.to===h && a[h][i]===st.last.task) cls+=" moved"; }
+        cells+='<div class="'+cls+'"></div>';
+      }
+      var isHot=(st.hot===h && !st.done), isSkip=!!st.skip[h] && !st.done;
+      html+='<div class="host'+(isHot?" hot":"")+(isSkip&&!isHot?" skipped":"")+'">'+
+        (isHot?'<span class="flag">looking here</span>':(isSkip&&!st.done?'<span class="flag skip">set aside</span>':''))+
+        '<div class="hname">'+HOSTS[h].n+'<small>limit '+cap+'</small></div>'+
+        '<div class="cells">'+cells+'</div>'+
+        '<div class="meter"><div class="fill'+(u>100?" over":"")+'" style="width:'+Math.min(u,100)+'%"></div><div class="mean" style="left:'+MEAN+'%"></div></div>'+
+        '<div class="u">'+n+' task'+(n===1?"":"s")+' · '+Math.round(u)+'% full'+(u>100?' (over)':'')+'</div></div>';
+    }
+    $("hosts").innerHTML=html;
+    var sc=scoreOf(a);
+    $("score").textContent=fmt1(sc);
+    $("stats").textContent="Moves made: "+st.moves+" · Pass "+st.cycle+(st.done?" · finished":"");
+    // sparkline
+    var hist=st.hist, mx=hist[0]||1, pts=[];
+    for(var i2=0;i2<hist.length;i2++){
+      var x=hist.length===1?5:5+i2/(hist.length-1)*290;
+      var y=62-(hist[i2]/mx)*54;
+      pts.push(x.toFixed(1)+","+y.toFixed(1));
+    }
+    var last=pts[pts.length-1].split(",");
+    $("spark").innerHTML='<polyline points="'+pts.join(" ")+'"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="4"/>';
+    $("log").innerHTML=st.log.map(function(e){return '<li class="'+e.c+'">'+e.t+'</li>'}).join("");
+    $("stepBtn").disabled=st.done;
+    $("playBtn").disabled=st.done;
+    if(st.done&&timer){stopPlay()}
+  }
+  function stopPlay(){clearInterval(timer);timer=null;$("playBtn").textContent="Play"}
+  $("stepBtn").addEventListener("click",function(){stopPlay();step()});
+  $("playBtn").addEventListener("click",function(){
+    if(timer){stopPlay();return}
+    $("playBtn").textContent="Pause";
+    timer=setInterval(function(){ if(!step()) stopPlay(); },850);
+  });
+  $("resetBtn").addEventListener("click",function(){stopPlay();init()});
+  $("preset").addEventListener("change",function(){stopPlay();init()});
+  init();
+
+  /* ---------- 7. expression-graph demo ---------- */
+  var NODES=[
+    {id:"total",x:220,y:28,label:"total score",kids:["r0","r1"]},
+    {id:"r0",x:110,y:112,label:"rack 0",kids:["h0","h1"]},
+    {id:"r1",x:330,y:112,label:"rack 1",kids:["h2","h3"]},
+    {id:"h0",x:55,y:200,label:"host0"},{id:"h1",x:165,y:200,label:"host1"},
+    {id:"h2",x:275,y:200,label:"host2"},{id:"h3",x:385,y:200,label:"host3"}
+  ];
+  var byId={}; NODES.forEach(function(n){byId[n.id]=n});
+  var rackOf={h0:"r0",h1:"r0",h2:"r1",h3:"r1"};
+  var NS="http://www.w3.org/2000/svg";
+  function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e}
+  var edgeEls={}, nodeEls={};
+  NODES.forEach(function(n){
+    (n.kids||[]).forEach(function(k){
+      var c=byId[k];
+      edgeEls[n.id+">"+k]=el("path",{"class":"gedge",d:"M"+c.x+","+(c.y-17)+" L"+n.x+","+(n.y+17)},$("edges"));
+    });
+  });
+  NODES.forEach(function(n){
+    var g=el("g",{"class":"gnode"},$("nodes"));
+    el("rect",{x:n.x-42,y:n.y-17,width:84,height:34,rx:8},g);
+    var t=el("text",{x:n.x,y:n.y},g); t.textContent=n.label;
+    nodeEls[n.id]=g;
+  });
+  function showMove(s){
+    var p=s.split(","), from="h"+p[0], to="h"+p[1];
+    var hit={total:1}; hit[from]=1; hit[to]=1; hit[rackOf[from]]=1; hit[rackOf[to]]=1;
+    var cnt=0;
+    NODES.forEach(function(n){ var on=!!hit[n.id]; nodeEls[n.id].setAttribute("class","gnode"+(on?" hit":"")); if(on)cnt++; });
+    NODES.forEach(function(n){ (n.kids||[]).forEach(function(k){ var on=hit[n.id]&&hit[k]; edgeEls[n.id+">"+k].setAttribute("class","gedge"+(on?" hit":"")); }); });
+    $("gcount").textContent="Recalculated "+cnt+" of "+NODES.length+" boxes. The other "+(NODES.length-cnt)+" reuse their old value.";
+  }
+  var mbtns=document.querySelectorAll(".move-btns .btn");
+  Array.prototype.forEach.call(mbtns,function(b){
+    b.addEventListener("click",function(){
+      Array.prototype.forEach.call(mbtns,function(x){x.classList.remove("on")});
+      b.classList.add("on"); showMove(b.getAttribute("data-m"));
+    });
+  });
+  showMove("0,1");
+
+  /* ---------- 8. weights vs tiers ---------- */
+  var mode="w";
+  function updPrio(){
+    var w=+$("w").value; $("wOut").textContent=w.toFixed(1);
+    var A={b:4,m:9}, B={b:5,m:2}, winA;
+    var sa,sb;
+    if(mode==="w"){
+      sa=A.b+A.m*w; sb=B.b+B.m*w;
+      $("resA").textContent="score "+sa.toFixed(1); $("resB").textContent="score "+sb.toFixed(1);
+      winA = sa<sb;
+      $("prioMsg").textContent = winA
+        ? "Layout A wins. Moves are cheap enough here that the better balance is worth 9 moves."
+        : "Layout B wins. Moves matter enough that 2 moves beats 9, even with slightly worse balance.";
+    } else {
+      $("resA").textContent="(4, 9)"; $("resB").textContent="(5, 2)";
+      winA = A.b<B.b || (A.b===B.b && A.m<B.m);
+      $("prioMsg").textContent="Layout A wins. Balance is tier 1, and 4 beats 5. The number of moves is never even looked at.";
+    }
+    $("optA").className="opt"+(winA?" win":""); $("optB").className="opt"+(winA?"":" win");
+  }
+  function setMode(m){
+    mode=m;
+    $("modeW").setAttribute("aria-pressed",m==="w"); $("modeT").setAttribute("aria-pressed",m==="t");
+    $("wRow").hidden=(m!=="w"); $("tRow").hidden=(m!=="t");
+    updPrio();
+  }
+  $("modeW").addEventListener("click",function(){setMode("w")});
+  $("modeT").addEventListener("click",function(){setMode("t")});
+  $("w").addEventListener("input",updPrio);
+  setMode("w");
+})();
+</script>
+
+</body></html>
