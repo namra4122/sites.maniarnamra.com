@@ -1,3 +1,10 @@
 {
-  "pages": []
+  "pages": [
+    {
+      "title": "Rebalancer From Zero",
+      "url": "/learning/rebalancer-from-zero/",
+      "section": "learning",
+      "description": "A from-scratch visual guide to Meta"
+    }
+  ]
 }
