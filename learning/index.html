@@ -12,22 +12,50 @@
 </script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t}catch(e){}</script>
+<script src="/assets/cmdk.js" defer></script>
 <title>/learning/ — sites.maniarnamra.com</title>
 <meta name="description" content="LLM-generated learning guides.">
 <style>
-  html { background: #fff; color: #111; }
+  :root {
+    --color-black: #000;
+    --color-emerald-500: oklch(69.6% .17 162.48);
+    --bg: #fff; --fg: #111; --muted: #555; --rule: #111; --line: #ddd;
+    --hover: #f0f0f0; --accent: #111; --link: #111;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: var(--color-black); --fg: #e5e5e5; --muted: #a3a3a3; --rule: #333; --line: #262626;
+      --hover: #111; --accent: var(--color-emerald-500); --link: var(--color-emerald-500);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: var(--color-black); --fg: #e5e5e5; --muted: #a3a3a3; --rule: #333; --line: #262626;
+    --hover: #111; --accent: var(--color-emerald-500); --link: var(--color-emerald-500);
+    color-scheme: dark;
+  }
+  html { background: var(--bg); color: var(--fg); }
   body { max-width: 38rem; margin: 4rem auto; padding: 0 1.25rem;
          font: 1rem/1.6 Georgia, 'Times New Roman', serif; }
   h1 { font-size: 1.5rem; font-weight: normal; margin: 0 0 0.25rem; }
-  hr { border: 0; border-top: 1px solid #111; margin: 1.5rem 0; }
-  a { color: #111; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 1.5rem 0; }
+  a { color: var(--link); }
+  .top { display: flex; flex-wrap: wrap; align-items: baseline;
+         justify-content: space-between; gap: 0.5rem 1rem; margin-bottom: 0.25rem; }
+  .top h1 { margin: 0; }
+  .cmdk-trigger { visibility: hidden; }
   .meta { font-style: italic; }
   ul { padding-left: 1.25rem; }
 </style>
 </head>
 <body>
 
-<h1>/learning/</h1>
+<header class="top">
+  <h1>/learning/</h1>
+  <button type="button" class="cmdk-trigger" data-cmdk-open aria-keyshortcuts="Meta+K Control+K">Search <kbd>⌘K</kbd></button>
+</header>
 <p class="meta">Guides. <a href="/">Home</a>.</p>
 
 <hr>

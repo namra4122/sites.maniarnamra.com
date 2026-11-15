@@ -9,6 +9,8 @@ Served via Cloudflare at
 - `/index.html` — apex page. Spartan. Keep it that way.
 - `/research/<report-name>/index.html` — reports.
 - `/learning/<guide-name>/index.html` — guides.
+- `/assets/cmdk.js` — Cmd+K search palette and theme switcher for the shell pages.
+- `/search-index.json` — generated page index for search. Don't edit by hand.
 - `/llms.txt` — instructions for LLMs uploading to this repo. Read it before adding anything.
 
 ## Rules
