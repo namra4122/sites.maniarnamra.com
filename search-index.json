@@ -1,6 +1,12 @@
 {
   "pages": [
     {
+      "title": "fframes: a halftone brick-toy data centre",
+      "url": "/research/fframes-lego-datacentre-halftone/",
+      "section": "research",
+      "description": "How fframes turns Rust code into video, and how one 24-second tilt-shift data-centre film was built with it: 3D scene, depth of field, brick-toy figures and a halftone shader."
+    },
+    {
       "title": "Rebalancer From Zero",
       "url": "/learning/rebalancer-from-zero/",
       "section": "learning",
