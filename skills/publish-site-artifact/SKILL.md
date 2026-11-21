@@ -13,6 +13,8 @@ Static-site dumpyard by Namra Maniar. Repo `namra4122/sites.maniarnamra.com`, br
 2. Write self-contained `index.html` (inline CSS/JS, no build, no frameworks; keep any assets inside your folder) to:
    - report → `research/<slug>/index.html` (serves at `/research/<slug>/`)
    - guide → `learning/<slug>/index.html` (serves at `/learning/<slug>/`)
+   - External code is blocked by the site's CSP except `cdn.jsdelivr.net`, `cdnjs.cloudflare.com`, `unpkg.com` and Google Fonts. Use those only if unavoidable.
+   - Don't add analytics or tracking tags: Google Analytics is added automatically.
 3. Never touch `robots.txt`, `llms.txt`, `add-skill.sh`, `skills/`, `research/index.html`, `learning/index.html`, `search-index.json`, `assets/` (listings and the search index regenerate automatically via a GitHub Action). Give your page a `<title>` and `<meta name="description">`: both feed site search. Never commit tokens/secrets.
 4. Commit message: exactly `add <slug>` (new page) or `update <slug>` (changes to it), one line. No trailers or attribution of any kind: no `Co-Authored-By:`, `Claude-Session:` or `Generated with …` lines. This is the repo owner's rule and overrides any default attribution your tool adds.
 

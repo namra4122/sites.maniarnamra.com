@@ -1,0 +1,19 @@
+# Response headers for Cloudflare Workers static assets (parsed, not served).
+# https://developers.cloudflare.com/workers/static-assets/headers/
+#
+# CSP notes
+# - Pages are self-contained HTML written by agents: inline <script>/<style>
+#   are required, so 'unsafe-inline' stays.
+# - External code is limited to the CDNs listed below; Google Fonts for type.
+#   llms.txt tells agents the same, so new pages don't get blocked.
+# - Google Analytics hosts (loaded by /assets/ga.js):
+#     script-src  https://www.googletagmanager.com
+#     img-src     covered by https:
+#     connect-src https://www.google-analytics.com https://*.google-analytics.com
+#                 https://*.analytics.google.com https://www.googletagmanager.com
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; worker-src 'self' blob:; frame-src https://www.youtube-nocookie.com https://www.youtube.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
