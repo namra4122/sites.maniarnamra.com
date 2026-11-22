@@ -1,0 +1,19 @@
+name: analytics-guard
+
+# Keeps visitor data in Namra's GA property: fails if a page loads the Google
+# tag itself or carries someone else's ID (e.g. the upstream fork's, after a
+# merge from championswimmer/sites.arnavg.in).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 .github/scripts/check-analytics.py
